@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import RoomSelection from './components/RoomSelection';
 import DateSelection from './components/DateSelection';
@@ -8,6 +8,11 @@ import Footer from './components/Footer';
 function App() {
   const [selectedRoom, setSelectedRoom] = useState<'lime' | 'teal'>('lime');
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
+  // Set document title
+  useEffect(() => {
+    document.title = 'GL - Meeting Booth Booking App';
+  }, []);
 
   return (
     <div className="min-h-screen bg-background-light font-inter">
