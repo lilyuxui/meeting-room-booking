@@ -1,24 +1,36 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from 'react';
+import Header from './components/Header';
+import RoomSelection from './components/RoomSelection';
+import DateSelection from './components/DateSelection';
+import TimeSlotBooking from './components/TimeSlotBooking';
+import Footer from './components/Footer';
 
 function App() {
+  const [selectedRoom, setSelectedRoom] = useState<'lime' | 'teal'>('lime');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="min-h-screen bg-background-light font-inter">
+      <Header />
+      <main className="flex flex-col items-center justify-start gap-8 px-4 py-12 pb-24 md:px-8 lg:px-0">
+        <div className="w-full max-w-896 flex flex-col gap-8">
+          <RoomSelection 
+            selectedRoom={selectedRoom} 
+            onRoomChange={setSelectedRoom} 
+          />
+          <div className="flex flex-col gap-8">
+            <DateSelection 
+              selectedDate={selectedDate} 
+              onDateChange={setSelectedDate} 
+            />
+            <TimeSlotBooking 
+              selectedRoom={selectedRoom} 
+              selectedDate={selectedDate} 
+            />
+          </div>
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 }
