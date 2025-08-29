@@ -17,9 +17,9 @@ interface TimeSlotData {
 }
 
 const TimeSlotBooking: React.FC<TimeSlotBookingProps> = ({ selectedRoom, selectedDate }) => {
-  const [bookedSlots, setBookedSlots] = useState<Set<string>>(new Set(['8:30-9:00']));
+  const [bookedSlots, setBookedSlots] = useState<Set<string>>(new Set());
   const [slotBookings, setSlotBookings] = useState<Map<string, { name: string; email: string }>>(
-    new Map([['8:30-9:00', { name: 'Lily', email: 'lily@example.com' }]])
+    new Map()
   );
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
@@ -28,7 +28,7 @@ const TimeSlotBooking: React.FC<TimeSlotBookingProps> = ({ selectedRoom, selecte
 
   const timeSlots: TimeSlotData[] = [
     { id: '8:00-8:30', time: '8:00 - 8:30 AM', status: 'available' },
-    { id: '8:30-9:00', time: '8:30 - 9:00 AM', status: 'booked', bookedBy: 'Lily' },
+    { id: '8:30-9:00', time: '8:30 - 9:00 AM', status: 'available' },
     { id: '9:00-9:30', time: '9:00 - 9:30 AM', status: 'available' },
     { id: '9:30-10:00', time: '9:30 - 10:00 AM', status: 'available' },
     { id: '10:00-10:30', time: '10:00 - 10:30 AM', status: 'available' },
@@ -46,6 +46,25 @@ const TimeSlotBooking: React.FC<TimeSlotBookingProps> = ({ selectedRoom, selecte
     { id: '4:00-4:30', time: '4:00 - 4:30 PM', status: 'available' },
     { id: '4:30-5:00', time: '4:30 - 5:00 PM', status: 'available' },
   ];
+
+  // Check if the selected date is today
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() && 
+           date.getMonth() === today.getMonth() && 
+           date.getFullYear() === today.getFullYear();
+  };
+
+  // Initialize booked slots only for today
+  React.useEffect(() => {
+    if (isToday(selectedDate)) {
+      setBookedSlots(new Set(['8:30-9:00']));
+      setSlotBookings(new Map([['8:30-9:00', { name: 'Lily', email: 'lily@example.com' }]]));
+    } else {
+      setBookedSlots(new Set());
+      setSlotBookings(new Map());
+    }
+  }, [selectedDate]);
 
   const handleBookSlot = (slotId: string) => {
     const slot = timeSlots.find(s => s.id === slotId);
