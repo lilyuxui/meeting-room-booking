@@ -17,10 +17,13 @@ interface TimeSlotData {
 }
 
 const TimeSlotBooking: React.FC<TimeSlotBookingProps> = ({ selectedRoom, selectedDate }) => {
-  const [bookedSlots, setBookedSlots] = useState<Set<string>>(new Set());
-  const [slotBookings, setSlotBookings] = useState<Map<string, { name: string; email: string }>>(
-    new Map()
-  );
+  // Per-room, per-date booking state
+  type BookingMap = Map<string, Set<string>>; // key -> set of slot IDs
+  type BookingDetailMap = Map<string, Map<string, { name: string; email: string }>>; // key -> slotId -> details
+
+  const [bookings, setBookings] = useState<BookingMap>(new Map());
+  const [bookingDetails, setBookingDetails] = useState<BookingDetailMap>(new Map());
+
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlotData | null>(null);
@@ -47,24 +50,44 @@ const TimeSlotBooking: React.FC<TimeSlotBookingProps> = ({ selectedRoom, selecte
     { id: '4:30-5:00', time: '4:30 - 5:00 PM', status: 'available' },
   ];
 
+  // Helpers for per-room, per-date keys
+  const toDateKey = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  const getKey = (room: 'lime' | 'teal', date: Date) => `${room}|${toDateKey(date)}`;
+
   // Check if the selected date is today
   const isToday = (date: Date) => {
     const today = new Date();
-    return date.getDate() === today.getDate() && 
-           date.getMonth() === today.getMonth() && 
-           date.getFullYear() === today.getFullYear();
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
   };
 
-  // Initialize booked slots only for today
+  // Seed example booking for "today" per room without overwriting existing entries
   React.useEffect(() => {
-    if (isToday(selectedDate)) {
-      setBookedSlots(new Set(['8:30-9:00']));
-      setSlotBookings(new Map([['8:30-9:00', { name: 'Lily', email: 'lily@example.com' }]]));
-    } else {
-      setBookedSlots(new Set());
-      setSlotBookings(new Map());
-    }
-  }, [selectedDate]);
+    if (!isToday(selectedDate)) return;
+    const key = getKey(selectedRoom, selectedDate);
+
+    setBookings(prev => {
+      if (prev.has(key)) return prev;
+      const next = new Map(prev);
+      next.set(key, new Set(['8:30-9:00']));
+      return next;
+    });
+    setBookingDetails(prev => {
+      if (prev.has(key)) return prev;
+      const next = new Map(prev);
+      next.set(key, new Map([['8:30-9:00', { name: 'Lily', email: 'lily@example.com' }]]));
+      return next;
+    });
+  }, [selectedDate, selectedRoom]);
 
   const handleBookSlot = (slotId: string) => {
     const slot = timeSlots.find(s => s.id === slotId);
@@ -75,21 +98,29 @@ const TimeSlotBooking: React.FC<TimeSlotBookingProps> = ({ selectedRoom, selecte
   };
 
   const handleBookingConfirm = (bookingData: { name: string; email: string }) => {
-    if (selectedSlot) {
-      setLastBookingData(bookingData);
-      setBookedSlots(prev => {
-        const newSet = new Set(prev);
-        newSet.add(selectedSlot.id);
-        return newSet;
-      });
-      setSlotBookings(prev => {
-        const newMap = new Map(prev);
-        newMap.set(selectedSlot.id, bookingData);
-        return newMap;
-      });
-      setShowBookingModal(false);
-      setShowConfirmationModal(true);
-    }
+    if (!selectedSlot) return;
+    const key = getKey(selectedRoom, selectedDate);
+
+    setLastBookingData(bookingData);
+
+    setBookings(prev => {
+      const next = new Map(prev);
+      const current = next.get(key) ? new Set(next.get(key)!) : new Set<string>();
+      current.add(selectedSlot.id);
+      next.set(key, current);
+      return next;
+    });
+
+    setBookingDetails(prev => {
+      const next = new Map(prev);
+      const current = next.get(key) ? new Map(next.get(key)!) : new Map<string, { name: string; email: string }>();
+      current.set(selectedSlot.id, bookingData);
+      next.set(key, current);
+      return next;
+    });
+
+    setShowBookingModal(false);
+    setShowConfirmationModal(true);
   };
 
   const handleCloseBookingModal = () => {
@@ -133,17 +164,22 @@ const TimeSlotBooking: React.FC<TimeSlotBookingProps> = ({ selectedRoom, selecte
         <div className="flex flex-col gap-2 w-full">
           {/* Responsive grid: Mobile (1 column), Tablet (2 columns), Desktop (2 columns with larger slots) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 w-full">
-            {timeSlots.map((slot) => (
-              <TimeSlot
-                key={slot.id}
-                slot={slot}
-                isBooked={bookedSlots.has(slot.id)}
-                onBook={handleBookSlot}
-                roomName={getRoomDisplayName()}
-                selectedDate={selectedDate}
-                bookedBy={slotBookings.get(slot.id)?.name}
-              />
-            ))}
+            {(() => {
+              const key = getKey(selectedRoom, selectedDate);
+              const currentBooked = bookings.get(key) ?? new Set<string>();
+              const currentDetails = bookingDetails.get(key) ?? new Map<string, { name: string; email: string }>();
+              return timeSlots.map((slot) => (
+                <TimeSlot
+                  key={slot.id}
+                  slot={slot}
+                  isBooked={currentBooked.has(slot.id)}
+                  onBook={handleBookSlot}
+                  roomName={getRoomDisplayName()}
+                  selectedDate={selectedDate}
+                  bookedBy={currentDetails.get(slot.id)?.name}
+                />
+              ));
+            })()}
           </div>
         </div>
       </div>
