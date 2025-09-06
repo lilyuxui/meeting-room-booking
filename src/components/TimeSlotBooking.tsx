@@ -4,6 +4,25 @@ import clock from '../assets/clock.svg';
 import BookingDetailModal from './BookingDetailModal';
 import BookingConfirmationModal from './BookingConfirmationModal';
 
+// Helpers for per-room, per-date keys (module scope to avoid hook deps warnings)
+const toDateKey = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+const getKey = (room: 'lime' | 'teal', date: Date) => `${room}|${toDateKey(date)}`;
+
+const isToday = (date: Date) => {
+  const today = new Date();
+  return (
+    date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear()
+  );
+};
+
 interface TimeSlotBookingProps {
   selectedRoom: 'lime' | 'teal';
   selectedDate: Date;
@@ -49,26 +68,6 @@ const TimeSlotBooking: React.FC<TimeSlotBookingProps> = ({ selectedRoom, selecte
     { id: '4:00-4:30', time: '4:00 - 4:30 PM', status: 'available' },
     { id: '4:30-5:00', time: '4:30 - 5:00 PM', status: 'available' },
   ];
-
-  // Helpers for per-room, per-date keys
-  const toDateKey = (date: Date) => {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  };
-
-  const getKey = (room: 'lime' | 'teal', date: Date) => `${room}|${toDateKey(date)}`;
-
-  // Check if the selected date is today
-  const isToday = (date: Date) => {
-    const today = new Date();
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
-  };
 
   // Seed example booking for "today" per room without overwriting existing entries
   React.useEffect(() => {
