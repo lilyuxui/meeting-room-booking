@@ -33,8 +33,8 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-[16px] p-4 w-full max-w-md">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 py-4">
+      <div className="bg-white rounded-[16px] p-4 w-[calc(100%-32px)] max-w-md">
         <div className="flex flex-col gap-6">
           {/* Header */}
           <div className="flex flex-col gap-1">
